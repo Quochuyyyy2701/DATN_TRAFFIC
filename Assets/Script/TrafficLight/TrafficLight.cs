@@ -23,7 +23,7 @@ public class TrafficLight : CustomMonoBehaviour
     public LightState currentState;
     private void Start()
     {
-        StartCoroutine(CycleTrafficLights());
+        //StartCoroutine(CycleTrafficLights());
     }
 
     private IEnumerator CycleTrafficLights()
@@ -31,15 +31,15 @@ public class TrafficLight : CustomMonoBehaviour
         while (true)
         {
             // GREEN ON
-            SetLightState(Color.green);
+            SetLightState(Color.green, LightState.Green);
             yield return new WaitForSeconds(greenDuration);
 
             // YELLOW ON
-            SetLightState(Color.yellow);
+            SetLightState(Color.yellow, LightState.Yellow);
             yield return new WaitForSeconds(yellowDuration);
 
             // RED ON
-            SetLightState(Color.red);
+            SetLightState(Color.red , LightState.Red);
             yield return new WaitForSeconds(redDuration);
         }
     }
@@ -48,9 +48,10 @@ public class TrafficLight : CustomMonoBehaviour
     {
         Traffic();
     }
-    public void SetLightState(Color color)
+    public void SetLightState(Color color, LightState currentStage)
     {
         trafficLight.color = color;
+        currentState = currentStage;
     }
 
     public override void LoadComponent()
@@ -73,12 +74,18 @@ public class TrafficLight : CustomMonoBehaviour
     {
         if(trafficLight.color == Color.red)
         {
+            trafficCollider.enabled = true;
             OnLightChanged?.Invoke(currentState);
-            trafficCollider.isTrigger = false;
+           
         } else if(trafficLight.color == Color.green)
         {
+            trafficCollider.enabled = false;
             OnLightChanged?.Invoke(currentState);
-            trafficCollider.isTrigger = true;
+           
+        } else if(trafficLight.color == Color.yellow)
+        {
+            trafficCollider.enabled = true;
+            OnLightChanged?.Invoke(currentState);
         }    
     }    
     

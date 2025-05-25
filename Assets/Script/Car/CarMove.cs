@@ -11,11 +11,12 @@ public class CarMove : CustomMonoBehaviour
     [SerializeField] private Transform targetPoint;
     private Quaternion targetRotation;
     private float rotationSpeed = 5f;
-    [SerializeField] private float detectionDistance = 3f;
+    [SerializeField] private float detectionDistance = 1f;
     [SerializeField] private LayerMask carLayer; // Layer chứa các xe
     private bool isWaiting = false;
     void Start()
     {
+        detectionDistance = 1f;
         targetPoint = CurrentSegment.wayPoint.GetStartPoint();
         InitSegmentMove();
     }
@@ -62,8 +63,30 @@ public class CarMove : CustomMonoBehaviour
     }
     private bool IsCarInFront()
     {
-        Ray ray = new Ray(transform.position + Vector3.up * 0.5f, transform.forward);
-        return Physics.Raycast(ray, detectionDistance, carLayer);
+        Vector3 origin = transform.position + Vector3.up * 0.5f;
+        Vector3 halfExtents = new Vector3(0.5f, 0.5f, 1f);
+        Quaternion orientation = transform.rotation;
+        Vector3 castDirection = transform.forward;
+        if (Physics.BoxCast(origin, halfExtents, castDirection, out RaycastHit hit, orientation, detectionDistance))
+        {
+            GameObject hitObj = hit.collider.gameObject;
+
+            if (hitObj.CompareTag("TrafficLight"))
+            {
+                TrafficLight light = hitObj.GetComponent<TrafficLight>();
+                if (light != null && light.currentState == LightState.Red)
+                {
+                    lastDirection = transform.forward;
+                    return true;
+                }
+            }
+            else if (((1 << hit.collider.gameObject.layer) & carLayer) != 0)
+            {
+                lastDirection = transform.forward;
+                return true;
+            }
+        }
+        return false;
     }
 
 
@@ -136,53 +159,53 @@ public class CarMove : CustomMonoBehaviour
     }
 
 
-    private void OnCollisionEnter(Collision collision)
-    {
-        if (collision.collider.CompareTag("TrafficLight"))
-        {
-            var light = collision.collider.GetComponent<TrafficLight>();
-            light.OnLightChanged += OnTrafficLightChanged;
+    //private void OnCollisionEnter(Collision collision)
+    //{
+    //    if (collision.collider.CompareTag("TrafficLight"))
+    //    {
+    //        var light = collision.collider.GetComponent<TrafficLight>();
+    //        light.OnLightChanged += OnTrafficLightChanged;
 
-            if (light.currentState == LightState.Red)
-            {
-                Debug.Log("Đèn đỏ - dừng");
-                isWaiting = true;
-                direction = Vector3.zero;
-            }
-            else
-            {
-                Debug.Log("Đèn xanh - tiếp tục đi");
-                isWaiting = false;
-                direction = lastDirection;
-            }
-        }
-    }
+    //        if (light.currentState == LightState.Red)
+    //        {
+    //            Debug.Log("Đèn đỏ - dừng");
+    //            isWaiting = true;
+    //            direction = Vector3.zero;
+    //        }
+    //        else
+    //        {
+    //            Debug.Log("Đèn xanh - tiếp tục đi");
+    //            isWaiting = false;
+    //            direction = lastDirection;
+    //        }
+    //    }
+    //}
 
-    private void OnTrafficLightChanged(LightState newState)
-    {
-        if (newState == LightState.Green && isWaiting)
-        {
-            Debug.Log("Đèn chuyển xanh - xe tiếp tục");
-            direction = Vector3.forward;
-            isWaiting = false;
-        }
-        else if (newState == LightState.Red)
-        {
-            Debug.Log("Đèn chuyển đỏ - xe dừng");
-            direction = Vector3.zero;
-            isWaiting = true;
-        }
-    }
+    //private void OnTrafficLightChanged(LightState newState)
+    //{
+    //    if (newState == LightState.Green && isWaiting)
+    //    {
+    //        Debug.Log("Đèn chuyển xanh - xe tiếp tục");
+    //        direction = Vector3.forward;
+    //        isWaiting = false;
+    //    }
+    //    else if (newState == LightState.Red)
+    //    {
+    //        Debug.Log("Đèn chuyển đỏ - xe dừng");
+    //        direction = Vector3.zero;
+    //        isWaiting = true;
+    //    }
+    //}
 
-    private void OnTriggerExit(Collider other)
-    {
-        if (other.CompareTag("TrafficLight"))
-        {
-            var light = other.GetComponent<TrafficLight>();
-            light.OnLightChanged -= OnTrafficLightChanged;
-            Debug.Log("Xe đã rời khỏi vùng đèn giao thông");
-        }
-    }
+    //private void OnTriggerExit(Collider other)
+    //{
+    //    if (other.CompareTag("TrafficLight"))
+    //    {
+    //        var light = other.GetComponent<TrafficLight>();
+    //        light.OnLightChanged -= OnTrafficLightChanged;
+    //        Debug.Log("Xe đã rời khỏi vùng đèn giao thông");
+    //    }
+    //}
     IEnumerator CoutinueMove(float time)
     {
         yield return new WaitForSeconds(time);

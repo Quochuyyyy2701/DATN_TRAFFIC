@@ -4,15 +4,16 @@ using UnityEngine;
 
 public class TrafficSensor : MonoBehaviour
 {
-    // Start is called before the first frame update
-    void Start()
+    public int waitingCarCount = 0;
+
+    private void OnTriggerEnter(Collider other)
     {
-        
+        if (other.CompareTag("Car")) waitingCarCount++;
     }
 
-    // Update is called once per frame
-    void Update()
+    private void OnTriggerExit(Collider other)
     {
-        
+        if (other.CompareTag("Car")) waitingCarCount--;
     }
 }
+
