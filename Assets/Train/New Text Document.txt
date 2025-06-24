@@ -1,1 +1,2 @@
 python -m mlagents.trainers.learn E:/Repo/DATN_TRAFFIC/Assets/Train/trafficlight_config.yaml --run-id=trafficlight_001 --train
+python -m mlagents.trainers.learn E:/Repo/DATN_TRAFFIC/Assets/Train/trafficlight_config.yaml --run-id=trafficlight_001 --resume

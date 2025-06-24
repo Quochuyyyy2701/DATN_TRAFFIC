@@ -1,0 +1,87 @@
+{
+    "TrafficAgent2": {
+        "checkpoints": [
+            {
+                "steps": 16395,
+                "file_path": "results\\trafficlight_005\\TrafficAgent2\\TrafficAgent2-16395.onnx",
+                "reward": 2116.6528375175562,
+                "creation_time": 1750591696.5446067,
+                "auxillary_file_paths": [
+                    "results\\trafficlight_005\\TrafficAgent2\\TrafficAgent2-16395.pt"
+                ]
+            },
+            {
+                "steps": 32165,
+                "file_path": "results\\trafficlight_005\\TrafficAgent2\\TrafficAgent2-32165.onnx",
+                "reward": 1771.858349609375,
+                "creation_time": 1750640097.4983838,
+                "auxillary_file_paths": [
+                    "results\\trafficlight_005\\TrafficAgent2\\TrafficAgent2-32165.pt"
+                ]
+            },
+            {
+                "steps": 74500,
+                "file_path": "results\\trafficlight_005\\TrafficAgent2\\TrafficAgent2-74500.onnx",
+                "reward": 4698.656655365566,
+                "creation_time": 1750769828.0503254,
+                "auxillary_file_paths": [
+                    "results\\trafficlight_005\\TrafficAgent2\\TrafficAgent2-74500.pt"
+                ]
+            }
+        ],
+        "final_checkpoint": {
+            "steps": 74500,
+            "file_path": "results\\trafficlight_005\\TrafficAgent2.onnx",
+            "reward": 4698.656655365566,
+            "creation_time": 1750769828.0503254,
+            "auxillary_file_paths": [
+                "results\\trafficlight_005\\TrafficAgent2\\TrafficAgent2-74500.pt"
+            ]
+        }
+    },
+    "TrafficAgent3": {
+        "checkpoints": [
+            {
+                "steps": 30412,
+                "file_path": "results\\trafficlight_005\\TrafficAgent3\\TrafficAgent3-30412.onnx",
+                "reward": 5163.308028371711,
+                "creation_time": 1750591697.0877078,
+                "auxillary_file_paths": [
+                    "results\\trafficlight_005\\TrafficAgent3\\TrafficAgent3-30412.pt"
+                ]
+            },
+            {
+                "steps": 59065,
+                "file_path": "results\\trafficlight_005\\TrafficAgent3\\TrafficAgent3-59065.onnx",
+                "reward": 4593.7489637586805,
+                "creation_time": 1750640097.6544988,
+                "auxillary_file_paths": [
+                    "results\\trafficlight_005\\TrafficAgent3\\TrafficAgent3-59065.pt"
+                ]
+            },
+            {
+                "steps": 132874,
+                "file_path": "results\\trafficlight_005\\TrafficAgent3\\TrafficAgent3-132874.onnx",
+                "reward": 11546.400125254755,
+                "creation_time": 1750769827.8442893,
+                "auxillary_file_paths": [
+                    "results\\trafficlight_005\\TrafficAgent3\\TrafficAgent3-132874.pt"
+                ]
+            }
+        ],
+        "final_checkpoint": {
+            "steps": 132874,
+            "file_path": "results\\trafficlight_005\\TrafficAgent3.onnx",
+            "reward": 11546.400125254755,
+            "creation_time": 1750769827.8442893,
+            "auxillary_file_paths": [
+                "results\\trafficlight_005\\TrafficAgent3\\TrafficAgent3-132874.pt"
+            ]
+        }
+    },
+    "metadata": {
+        "stats_format_version": "0.3.0",
+        "mlagents_version": "0.30.0",
+        "torch_version": "2.7.0+cpu"
+    }
+}

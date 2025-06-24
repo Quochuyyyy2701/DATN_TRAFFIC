@@ -24,5 +24,10 @@ public class Segment : CustomMonoBehaviour
         wayPoint = transform.Find("WayPoint").GetComponent<WayPoint>();
     }    
 
+    public void OnMouseDown()
+    {
+        if (!Const.isSpawnerCar) return;
+        Spawner._instance.SpawnerCar(this);
+    }    
 
 }
