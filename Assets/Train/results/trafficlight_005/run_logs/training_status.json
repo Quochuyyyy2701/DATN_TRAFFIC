@@ -27,15 +27,24 @@
                 "auxillary_file_paths": [
                     "results\\trafficlight_005\\TrafficAgent2\\TrafficAgent2-74500.pt"
                 ]
+            },
+            {
+                "steps": 112832,
+                "file_path": "results\\trafficlight_005\\TrafficAgent2\\TrafficAgent2-112832.onnx",
+                "reward": 4915.9105802837175,
+                "creation_time": 1750855148.078187,
+                "auxillary_file_paths": [
+                    "results\\trafficlight_005\\TrafficAgent2\\TrafficAgent2-112832.pt"
+                ]
             }
         ],
         "final_checkpoint": {
-            "steps": 74500,
+            "steps": 112832,
             "file_path": "results\\trafficlight_005\\TrafficAgent2.onnx",
-            "reward": 4698.656655365566,
-            "creation_time": 1750769828.0503254,
+            "reward": 4915.9105802837175,
+            "creation_time": 1750855148.078187,
             "auxillary_file_paths": [
-                "results\\trafficlight_005\\TrafficAgent2\\TrafficAgent2-74500.pt"
+                "results\\trafficlight_005\\TrafficAgent2\\TrafficAgent2-112832.pt"
             ]
         }
     },
@@ -67,15 +76,24 @@
                 "auxillary_file_paths": [
                     "results\\trafficlight_005\\TrafficAgent3\\TrafficAgent3-132874.pt"
                 ]
+            },
+            {
+                "steps": 200069,
+                "file_path": "results\\trafficlight_005\\TrafficAgent3\\TrafficAgent3-200069.onnx",
+                "reward": 10446.936479048296,
+                "creation_time": 1750855147.841482,
+                "auxillary_file_paths": [
+                    "results\\trafficlight_005\\TrafficAgent3\\TrafficAgent3-200069.pt"
+                ]
             }
         ],
         "final_checkpoint": {
-            "steps": 132874,
+            "steps": 200069,
             "file_path": "results\\trafficlight_005\\TrafficAgent3.onnx",
-            "reward": 11546.400125254755,
-            "creation_time": 1750769827.8442893,
+            "reward": 10446.936479048296,
+            "creation_time": 1750855147.841482,
             "auxillary_file_paths": [
-                "results\\trafficlight_005\\TrafficAgent3\\TrafficAgent3-132874.pt"
+                "results\\trafficlight_005\\TrafficAgent3\\TrafficAgent3-200069.pt"
             ]
         }
     },
