@@ -39,7 +39,7 @@ behaviors:
     checkpoint_interval: 500000
     max_steps: 500000
     time_horizon: 64
-    summary_freq: 10000
+    summary_freq: 1000
     threaded: false
     self_play: null
     behavioral_cloning: null
@@ -109,9 +109,9 @@ checkpoint_settings:
   run_id: trafficlight_001
   initialize_from: null
   load_model: false
-  resume: true
+  resume: false
   force: false
-  train_model: false
+  train_model: true
   inference: false
   results_dir: results
 torch_settings:

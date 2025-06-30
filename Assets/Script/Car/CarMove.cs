@@ -74,7 +74,7 @@ public class CarMove : CustomMonoBehaviour
             if (hitObj.CompareTag("TrafficLight"))
             {
                 TrafficLight light = hitObj.GetComponent<TrafficLight>();
-                if (light != null && light.currentState == LightState.Red)
+                if (light != null && light.currentState == LightState.Red || light.currentState == LightState.Yellow)
                 {
                     lastDirection = transform.forward;
                     return true;

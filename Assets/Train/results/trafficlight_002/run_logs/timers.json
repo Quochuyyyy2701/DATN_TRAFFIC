@@ -1,0 +1,47 @@
+{
+    "name": "root",
+    "metadata": {
+        "timer_format_version": "0.1.0",
+        "start_time_seconds": "1751133938",
+        "python_version": "3.10.0 (tags/v3.10.0:b494f59, Oct  4 2021, 19:00:18) [MSC v.1929 64 bit (AMD64)]",
+        "command_line_arguments": "C:\\Users\\HOANG QUOC HUY\\AppData\\Local\\Programs\\Python\\Python310\\lib\\site-packages\\mlagents\\trainers\\learn.py E:/Repo/DATN_TRAFFIC/Assets/Train/trafficlight_config.yaml --run-id=trafficlight_002 --resume",
+        "mlagents_version": "0.30.0",
+        "mlagents_envs_version": "0.30.0",
+        "communication_protocol_version": "1.5.0",
+        "pytorch_version": "2.7.0+cpu",
+        "numpy_version": "1.23.5",
+        "end_time_seconds": "1751134046"
+    },
+    "total": 108.17364690001705,
+    "count": 1,
+    "self": 0.04072500002803281,
+    "children": {
+        "run_training.setup": {
+            "total": 1.1234286999970209,
+            "count": 1,
+            "self": 1.1234286999970209
+        },
+        "TrainerController.start_learning": {
+            "total": 107.009493199992,
+            "count": 1,
+            "self": 0.0027347000141162425,
+            "children": {
+                "TrainerController._reset_env": {
+                    "total": 107.00672779997694,
+                    "count": 1,
+                    "self": 107.00672779997694
+                },
+                "trainer_threads": {
+                    "total": 2.5999906938523054e-06,
+                    "count": 1,
+                    "self": 2.5999906938523054e-06
+                },
+                "TrainerController._save_models": {
+                    "total": 2.81000102404505e-05,
+                    "count": 1,
+                    "self": 2.81000102404505e-05
+                }
+            }
+        }
+    }
+}

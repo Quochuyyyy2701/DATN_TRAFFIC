@@ -8,7 +8,8 @@ public class TrafficLightAgent : Agent
 {
     public TrafficLightController controller;
     public CarSpawner carSpawner;
-    public float episodeDuration = 60f; // ⬅️ Tăng thời gian để agent có nhiều hành động hơn
+    public float episodeDuration = 60f;
+
     private float timer;
     private bool isPhaseRunning = false;
     private float lastTotalWaitingTime = 0f;
@@ -19,12 +20,12 @@ public class TrafficLightAgent : Agent
 
     public override void OnEpisodeBegin()
     {
-        Debug.Log("Episode Start");
+        Debug.Log("===== Episode Start =====");
         timer = 0f;
 
         controller.ResetIntersection();
         carSpawner.ClearAllCars();
-        carSpawner.ResetAndSpawnRandomCars(controller, 5);
+        carSpawner.ResetAndSpawnRandomCars(controller, 8);
 
         lastTotalWaitingTime = controller.GetTotalWaitingTime();
         lastTotalCarCount = controller.GetTotalCarCount();
@@ -38,120 +39,156 @@ public class TrafficLightAgent : Agent
     public override void CollectObservations(VectorSensor sensor)
     {
         int directionCount = controller.GetDirectionCount();
-        float maxCars = 20f; // ⬅️ Giả sử mỗi hướng tối đa có 20 xe
+        float maxCars = 20f;
 
         for (int i = 0; i < directionCount; i++)
         {
             float normalized = controller.GetCarCountAtDirection(i) / maxCars;
-            sensor.AddObservation(normalized); // ✅ Normalize số xe
+            sensor.AddObservation(normalized);
         }
 
-        sensor.AddObservation(lastDirection);
+        sensor.AddObservation((lastDirection + 1f) / 2f); // Normalize về [0, 1]
+
         sensor.AddObservation(sameDirectionCount / 5f);
-        sensor.AddObservation(controller.GetTotalWaitingTime() / 200f); // ⬅️ Normalize thời gian chờ nếu cần
+        sensor.AddObservation(controller.GetTotalWaitingTime() / 200f);
     }
 
-    public override void OnActionReceived(ActionBuffers actions)
+   public override void OnActionReceived(ActionBuffers actions)
+{
+    if (isPhaseRunning) return;
+
+    int proposedDirection = actions.DiscreteActions[0];
+    int direction = proposedDirection;
+    int baseGreenTime = actions.DiscreteActions[1] + 3;
+
+    int thisCar = controller.GetCarCountAtDirection(direction);
+    int otherDirection = 1 - direction;
+    int otherCar = controller.GetCarCountAtDirection(otherDirection);
+
+    int carDiff = Mathf.Abs(thisCar - otherCar);
+
+    // ===== Logic mở 2 lần liên tiếp nếu chênh lệch nhiều =====
+    if (direction == lastDirection)
     {
-        if (isPhaseRunning) return;
+        if (carDiff <= 4)
+        {
+            // Nếu xe 2 hướng không chênh lệch nhiều => phải luân phiên
+            AddReward(-1f);
+            Debug.LogWarning($"[REWARD] Hướng xe gần bằng nhau mà vẫn mở lại hướng {direction} => -1");
 
-        int direction = actions.DiscreteActions[0]; // 0: DT, 1: NB
-        int greenTimeStep = actions.DiscreteActions[1];
-        int greenTime = 5 + greenTimeStep; // 5 → 15s
+            direction = otherDirection;
+            thisCar = controller.GetCarCountAtDirection(direction);
+            otherCar = controller.GetCarCountAtDirection(1 - direction);
+            sameDirectionCount = 1;
+        }
+        else if (sameDirectionCount >= 2&& carDiff < 6)
+        {
+            // Mở quá 2 lần liên tiếp, kể cả khi chênh nhiều => vẫn phạt
+            AddReward(-2f);
+            Debug.LogWarning($"[REWARD] Cố mở hướng {direction} >2 lần liên tiếp => -2");
 
-        Debug.Log($"Action received: Direction={direction}, GreenTime={greenTime}");
-
-        if (direction == lastDirection)
-            sameDirectionCount++;
+            direction = otherDirection;
+            thisCar = controller.GetCarCountAtDirection(direction);
+            otherCar = controller.GetCarCountAtDirection(1 - direction);
+            sameDirectionCount = 1;
+        }
         else
-            sameDirectionCount = 0;
-
-        lastDirection = direction;
-
-        StartCoroutine(RunPhase(direction, greenTime));
-
-        // --- TÍNH REWARD ---
-        float reward = 0f;
-
-        int totalCarsBefore = lastTotalCarCount;
-        float waitingTimeBefore = lastTotalWaitingTime;
-
-        float currentWaitingTime = controller.GetTotalWaitingTime();
-        int currentCarCount = controller.GetTotalCarCount();
-
-        float deltaWaitingTime = waitingTimeBefore - currentWaitingTime;
-        int deltaCars = totalCarsBefore - currentCarCount;
-
-        // 1. Giảm thời gian chờ
-        reward += deltaWaitingTime * 0.5f;
-
-        // 2. Giảm tổng số xe
-        reward += deltaCars * 0.2f;
-
-        // 3. Phạt nếu chọn hướng không có xe
-        int carCount = controller.GetCarCountAtDirection(direction);
-        if (carCount == 0)
         {
-            reward -= 2f; // ✅ Phạt mạnh hơn
-            Debug.LogWarning("Chọn hướng không có xe!");
+            Debug.Log($"[CHO PHÉP] Mở lại hướng {direction} vì đang tắc hơn (chênh lệch = {carDiff})");
         }
-
-        // 4. Thưởng nếu chọn hướng có nhiều xe
-        reward += carCount * 0.1f;
-
-        // 5. Phạt nếu chọn liên tục cùng 1 hướng
-        if (sameDirectionCount >= 2)
-        {
-            reward -= sameDirectionCount * 1.5f; // ✅ Phạt tăng dần
-            Debug.LogWarning("Chọn cùng hướng liên tục!");
-        }
-
-        // 6. Phạt nếu không cải thiện
-        if (deltaWaitingTime <= 0 && deltaCars <= 0)
-        {
-            reward -= 0.5f;
-        }
-
-        // 7. Phạt nếu không chọn hướng đang tắc nhất
-        int mostCongestedDir = controller.GetMostCongestedDirection();
-        if (direction != mostCongestedDir && controller.GetCarCountAtDirection(mostCongestedDir) > 3)
-        {
-            reward -= 3f; // ✅ Phạt nặng nếu bỏ qua hướng tắc
-            Debug.LogWarning("Bỏ qua hướng tắc nhất!");
-        }
-        else if (direction == mostCongestedDir && carCount > 3)
-        {
-            reward += 2f; // ✅ Thưởng nếu chọn đúng hướng tắc
-        }
-
-        // 8. Phạt nếu thời gian đèn xanh quá dài so với số xe
-        if (greenTime > carCount * 2 + 2)
-        {
-            reward -= 0.5f;
-        }
-
-        SetReward(reward);
-        lastTotalWaitingTime = currentWaitingTime;
-        lastTotalCarCount = currentCarCount;
     }
+
+    // === Tính thời gian đèn xanh ===
+    int greenTime = Mathf.Clamp(baseGreenTime + thisCar / 2, 3, 15);
+
+    if (carDiff >= 6)
+    {
+        // Tăng thêm đèn xanh nếu đang tắc nhiều hơn
+        greenTime = Mathf.Clamp(greenTime + 2, 3, 15);
+        Debug.Log($"[TỐI ƯU] Hướng {direction} đang tắc hơn nhiều => tăng thời gian đèn");
+    }
+
+    if (thisCar >= 8 && otherCar <= 2)
+    {
+        greenTime = Mathf.Clamp(greenTime + 2, 3, 15);
+        Debug.LogWarning("[TỐI ƯU] Hướng đang tắc, hướng còn lại gần như trống => rút ngắn thời gian đèn");
+    }
+
+    if (thisCar <= 1 && otherCar >= 10)
+    {
+        Debug.LogWarning("Hướng này không có xe, hướng kia tắc => đổi đèn sớm");
+        greenTime = 1;
+    }
+
+    Debug.Log($"[ACTION] Chọn hướng: {(direction == 0 ? "Đông-Tây" : "Nam-Bắc")} | Thời gian đèn xanh: {greenTime}s");
+    Debug.Log($"[CARS] Xe tại hướng {direction}: {thisCar} | Hướng còn lại: {otherCar}");
+
+    StartCoroutine(RunPhase(direction, greenTime));
+
+    if (direction == lastDirection)
+        sameDirectionCount++;
+    else
+        sameDirectionCount = 1;
+
+    lastDirection = direction;
+
+    // === Tính reward ===
+    float reward = 0f;
+    float currentWaitingTime = controller.GetTotalWaitingTime();
+    int currentCarCount = controller.GetTotalCarCount();
+
+    float deltaWaitingTime = lastTotalWaitingTime - currentWaitingTime;
+    int deltaCars = lastTotalCarCount - currentCarCount;
+
+    if (deltaCars > 0)
+    {
+        float r = deltaCars * 1f;
+        reward += r;
+        Debug.Log($"[REWARD] Giảm xe: {deltaCars} => +{r}");
+    }
+
+    if (deltaWaitingTime > 0)
+    {
+        float r = deltaWaitingTime * 1f;
+        reward += r;
+        Debug.Log($"[REWARD] Giảm thời gian chờ: {deltaWaitingTime:F2} => +{r:F2}");
+    }
+
+    if (thisCar == 0)
+    {
+        reward -= 1f;
+        Debug.LogWarning("[REWARD] Không có xe ở hướng được mở => -1");
+    }
+
+    if (direction != controller.GetMostCongestedDirection() && otherCar - thisCar > 5)
+    {
+        reward -= 2f;
+        Debug.LogWarning("[REWARD] Bỏ qua hướng đang tắc nặng => -2");
+    }
+
+    Debug.Log($"[TOTAL REWARD] => {reward:F2}\n");
+
+    SetReward(reward);
+
+    lastTotalWaitingTime = currentWaitingTime;
+    lastTotalCarCount = currentCarCount;
+}
 
     private IEnumerator RunPhase(int direction, int greenTime)
     {
         isPhaseRunning = true;
         yield return StartCoroutine(controller.SetGreenPhase(direction, greenTime));
         isPhaseRunning = false;
-        RequestDecision();
+        RequestDecision(); // Gọi lại hành động tiếp theo
     }
 
     private void Update()
     {
         timer += Time.deltaTime;
-        if (Academy.Instance.IsCommunicatorOn)
+        if (Academy.Instance.IsCommunicatorOn && timer >= episodeDuration)
         {
-            if (timer >= episodeDuration)
-            {
-                EndEpisode();
-            }
+            Debug.Log("===== Episode End =====\n");
+            EndEpisode();
         }
     }
 
@@ -159,10 +196,9 @@ public class TrafficLightAgent : Agent
     {
         var discrete = actionsOut.DiscreteActions;
 
-        int dt = controller.GetCarCountAtDirection(0);
-        int nb = controller.GetCarCountAtDirection(1);
+        int dt = controller.GetCarCountAtDirection(0); // Đông-Tây
+        int nb = controller.GetCarCountAtDirection(1); // Nam-Bắc
 
         discrete[0] = (dt >= nb) ? 0 : 1;
-        discrete[1] = Mathf.Clamp((Mathf.Max(dt, nb) / 2), 0, 10);
     }
 }
