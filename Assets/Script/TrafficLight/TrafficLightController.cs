@@ -8,25 +8,51 @@ public class TrafficLightController : MonoBehaviour
     public class DirectionGroup
     {
         public string name;
-        public TrafficLight light;     // Một đèn duy nhất
-        public TrafficSensor sensor;   // Một sensor duy nhất
+        public TrafficLight light;     
+        public TrafficSensor sensor; 
         public Segment segment;
     }
 
     public List<DirectionGroup> directionsDT; // Nhóm Đông-Tây
     public List<DirectionGroup> directionsNB; // Nhóm Nam-Bắc
     public float yellowDuration = 3f;
-    public bool isUsingModel;
     public int greenTime;
     [HideInInspector] public float currentGreenTimeLeft = 0f;
-    public float greenCountdown_DT = 0f; // thời gian còn lại đến lượt đèn xanh của hướng Đông-Tây
-    public float greenCountdown_NB = 0f; // thời gian còn lại đến lượt đèn xanh của hướng Nam-Bắc
-
-    public void Start()
+    public int intersectionIndex = 1;
+    public CarSpawner spawner; 
+    public bool isUsingModel
     {
-        StartSequentialMode();
-            
+        get
+        {
+            switch (intersectionIndex)
+            {
+                case 1: return Const.isUsingModel1;
+                case 2: return Const.isUsingModel2;
+                case 3: return Const.isUsingModel3;
+                default: return true;
+            }
+        }
     }
+
+    public void Update()
+    {
+
+    }
+    public void ForceModelCheck()
+    {
+            if (!isUsingModel)
+            {
+                Debug.Log($"[Intersection {intersectionIndex}] Bật chế độ Thủ công.");
+                StartSequentialMode();
+            }
+            else
+            {
+                Debug.Log($"[Intersection {intersectionIndex}] Bật chế độ AI.");
+                StopSequentialMode();
+            }
+        
+    }
+
     /// <summary>
     /// Trả về tổng số xe đang chờ tại tất cả các hướng
     /// </summary>
@@ -51,23 +77,16 @@ public class TrafficLightController : MonoBehaviour
         if(isUsingModel == false) yield break;
         List<DirectionGroup> groupToGreen = (directionIndex == 0) ? directionsDT : directionsNB;
         List<DirectionGroup> groupToRed = (directionIndex == 0) ? directionsNB : directionsDT;
-        this.greenTime = greenTime;
-        currentGreenTimeLeft = greenTime;
         // Nhóm còn lại chuyển sang đỏ
         foreach (var group in groupToRed)
         {
-            group.light.SetLightState(Color.red, LightState.Red);
+            group.light.SetLightState(Color.red, LightState.Red, greenTime);
         }
 
         // Nhóm được chọn chuyển sang xanh
         foreach (var group in groupToGreen)
         {
-            group.light.SetLightState(Color.green, LightState.Green);
-        }
-        while (currentGreenTimeLeft > 0f)
-        {
-            yield return new WaitForSeconds(1f);
-            currentGreenTimeLeft -= 1f;
+            group.light.SetLightState(Color.green, LightState.Green, greenTime);
         }
 
         yield return new WaitForSeconds(greenTime);
@@ -75,65 +94,47 @@ public class TrafficLightController : MonoBehaviour
         // Pha vàng sau đèn xanh (nếu muốn)
         foreach (var group in groupToGreen)
         {
-            group.light.SetLightState(Color.yellow, LightState.Yellow);
+            group.light.SetLightState(Color.yellow, LightState.Yellow, yellowDuration);
         }
 
         yield return new WaitForSeconds(yellowDuration);
-
-        foreach (var group in groupToGreen)
-        {
-            group.light.SetLightState(Color.red, LightState.Red);
-        }
     }
     public IEnumerator SetGreenPhase2(int directionIndex, int greenTime)
     {
         
         List<DirectionGroup> groupToGreen = (directionIndex == 0) ? directionsDT : directionsNB;
         List<DirectionGroup> groupToRed = (directionIndex == 0) ? directionsNB : directionsDT;
-        this.greenTime = greenTime;
-        currentGreenTimeLeft = greenTime;
+
         // Nhóm còn lại chuyển sang đỏ
         foreach (var group in groupToRed)
         {
-            group.light.SetLightState(Color.red, LightState.Red);
+            group.light.SetLightState(Color.red, LightState.Red, greenTime);
         }
 
         // Nhóm được chọn chuyển sang xanh
         foreach (var group in groupToGreen)
         {
-            group.light.SetLightState(Color.green, LightState.Green);
+            group.light.SetLightState(Color.green, LightState.Green, greenTime);
         }
-        while (currentGreenTimeLeft > 0f)
-        {
-            yield return new WaitForSeconds(1f);
-            currentGreenTimeLeft -= 1f;
-        }
-
 
         yield return new WaitForSeconds(greenTime);
 
         // Pha vàng sau đèn xanh (nếu muốn)
         foreach (var group in groupToGreen)
         {
-            group.light.SetLightState(Color.yellow, LightState.Yellow);
+            group.light.SetLightState(Color.yellow, LightState.Yellow, yellowDuration);
         }
 
         yield return new WaitForSeconds(yellowDuration);
 
         foreach (var group in groupToGreen)
         {
-            group.light.SetLightState(Color.red, LightState.Red);
+            group.light.SetLightState(Color.red, LightState.Red, greenTime);
         }
     }
 
-    /// <summary>
-    /// Số lượng nhóm điều khiển (DT và NB)
-    /// </summary>
     public int GetDirectionCount() => 2;
 
-    /// <summary>
-    /// Lấy tổng số xe trong nhóm 0 (DT) hoặc 1 (NB)
-    /// </summary>
     public int GetCarCountAtDirection(int index)
     {
         int total = 0;
@@ -147,23 +148,36 @@ public class TrafficLightController : MonoBehaviour
         return total;
     }
 
-    /// <summary>
-    /// Reset tất cả đèn về đỏ
-    /// </summary>
     public void ResetIntersection()
     {
+       
         foreach (var group in directionsDT)
         {
-            group.light.SetLightState(Color.red, LightState.Red);
+            group.light.SetLightState(Color.red, LightState.Red,0);
 		group.sensor.ResetSensor();
         }
 
         foreach (var group in directionsNB)
         {
-            group.light.SetLightState(Color.red, LightState.Red);
+            group.light.SetLightState(Color.red, LightState.Red,0);
 		group.sensor.ResetSensor();
         }
     }
+
+    public void ResetAllCar()
+    {
+        spawner.ClearAllCars();
+        foreach (var group in directionsDT)
+        {
+            group.sensor.ResetSensor();
+        }
+
+        foreach (var group in directionsNB)
+        {  
+            group.sensor.ResetSensor();
+        }
+    }
+
     public int GetMostCongestedDirection()
     {
         int maxCars = -1;
@@ -290,7 +304,8 @@ public class TrafficLightController : MonoBehaviour
         int direction = 0; // 0: Đông-Tây, 1: Nam-Bắc
         while (isUsingModel == false) // chỉ chạy khi không dùng AI
         {
-            yield return StartCoroutine(SetGreenPhase2(direction, 10)); // 10 giây xanh mỗi pha
+            yield return StartCoroutine(SetGreenPhase2(direction, 10)); 
+            Debug.Log("Đổi hướng thủ công");
             direction = 1 - direction; // chuyển hướng
         }
     }

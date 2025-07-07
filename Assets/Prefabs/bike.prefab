@@ -230,7 +230,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 4.2138066, y: 1.4221573, z: -11.704879}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalScale: {x: 0.8, y: 0.8, z: 0.8}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 5831831573586984154}
@@ -253,10 +253,12 @@ MonoBehaviour:
   CurrentSegment: {fileID: 0}
   rb: {fileID: 5230334921050954444}
   targetPoint: {fileID: 0}
-  detectionDistance: 3
+  detectionDistance: 2
   carLayer:
     serializedVersion: 2
     m_Bits: 64
+  priority: 0
+  speed: 3
 --- !u!54 &5230334921050954444
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -303,8 +305,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 0.45280075, y: 0.9516419, z: 2.0549107}
-  m_Center: {x: 0.025330067, y: 0.46930462, z: 0.021927834}
+  m_Size: {x: 1.4373446, y: 1.2024255, z: 2.0549107}
+  m_Center: {x: 0.12931228, y: 0.59469634, z: 0.021927804}
 --- !u!1 &6701505418284573651
 GameObject:
   m_ObjectHideFlags: 0

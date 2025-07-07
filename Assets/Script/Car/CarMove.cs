@@ -11,13 +11,20 @@ public class CarMove : CustomMonoBehaviour
     [SerializeField] private Transform targetPoint;
     private Quaternion targetRotation;
     private float rotationSpeed = 5f;
-    [SerializeField] private float detectionDistance = 1f;
+
+    [SerializeField] private float detectionDistance = 2f;
     [SerializeField] private LayerMask carLayer; // Layer chứa các xe
-    private bool isWaiting = false;
+
+    [SerializeField] private int priority;
+    public float speed = 5;
+
+    private float waitTimer = 0f;
+    private float maxWaitTime = 2f;
+
     void Start()
     {
-        detectionDistance = 1f;
         targetPoint = CurrentSegment.wayPoint.GetStartPoint();
+        priority = gameObject.GetInstanceID();
         InitSegmentMove();
     }
 
@@ -38,18 +45,29 @@ public class CarMove : CustomMonoBehaviour
     {
         if (targetPoint == null) return;
 
-        // Nếu có xe phía trước thì không di chuyển
-        if (IsCarInFront())
+        if (IsObstacleAhead())
         {
-            Debug.DrawRay(transform.position + Vector3.up * 0.5f, transform.forward * detectionDistance, Color.red);
-            return;
+            waitTimer += Time.fixedDeltaTime;
+
+            if (waitTimer > maxWaitTime)
+            {
+                Debug.Log($"{name} waited too long, bypassing obstacle.");
+                // Cho phép đi tiếp dù có chướng ngại (bỏ qua return)
+                waitTimer = 0f;
+            }
+            else
+            {
+                Debug.DrawRay(transform.position + Vector3.up * 0.5f, transform.forward * detectionDistance, Color.red);
+                return;
+            }
         }
         else
         {
+            waitTimer = 0f;
             Debug.DrawRay(transform.position + Vector3.up * 0.5f, transform.forward * detectionDistance, Color.green);
         }
 
-        Vector3 velocity = direction * 3f;
+        Vector3 velocity = direction * speed;
         rb.MovePosition(rb.position + velocity * Time.fixedDeltaTime);
 
         float distanceToTarget = Vector3.Distance(transform.position, targetPoint.position);
@@ -61,34 +79,75 @@ public class CarMove : CustomMonoBehaviour
             }
         }
     }
-    private bool IsCarInFront()
+
+    private float GetDynamicDetectionDistance()
+    {
+        return Mathf.Max(detectionDistance, speed * Time.fixedDeltaTime * 5f);
+    }
+
+    private bool IsObstacleAhead()
     {
         Vector3 origin = transform.position + Vector3.up * 0.5f;
         Vector3 halfExtents = new Vector3(0.5f, 0.5f, 1f);
         Quaternion orientation = transform.rotation;
         Vector3 castDirection = transform.forward;
-        if (Physics.BoxCast(origin, halfExtents, castDirection, out RaycastHit hit, orientation, detectionDistance))
+
+        float dynamicDistance = GetDynamicDetectionDistance();
+
+        if (Physics.BoxCast(origin, halfExtents, castDirection, out RaycastHit hit, orientation, dynamicDistance))
         {
             GameObject hitObj = hit.collider.gameObject;
 
             if (hitObj.CompareTag("TrafficLight"))
             {
                 TrafficLight light = hitObj.GetComponent<TrafficLight>();
-                if (light != null && light.currentState == LightState.Red || light.currentState == LightState.Yellow)
+                if (light != null && (light.currentState == LightState.Red || light.currentState == LightState.Yellow))
                 {
-                    lastDirection = transform.forward;
                     return true;
                 }
             }
-            else if (((1 << hit.collider.gameObject.layer) & carLayer) != 0)
+            else if (hit.collider.CompareTag("Car"))
             {
-                lastDirection = transform.forward;
-                return true;
+                CarMove otherCar = hit.collider.GetComponent<CarMove>();
+
+                if (otherCar != null)
+                {
+                    Vector3 toOther = otherCar.transform.position - transform.position;
+                    float forwardDot = Vector3.Dot(transform.forward, toOther.normalized);
+                    bool isInFront = forwardDot > 0.3f;
+
+                    if (!isInFront)
+                        return false;
+
+                    float distanceToOther = Vector3.Distance(transform.position, otherCar.transform.position);
+
+                    if (this.priority > otherCar.priority && distanceToOther < 2f && !otherCar.IsMoving())
+                    {
+                        return false;
+                    }
+
+                    if (otherCar.IsStopped() || this.priority <= otherCar.priority)
+                    {
+                        return true;
+                    }
+
+                    return false;
+                }
             }
         }
+
         return false;
     }
 
+    public bool IsStopped()
+    {
+        return targetPoint == null || rb.velocity.magnitude < 0.1f;
+    }
+
+    public bool IsMoving()
+    {
+        return rb.velocity.magnitude > 0.1f;
+    }
 
     private void InitSegmentMove()
     {
@@ -117,6 +176,8 @@ public class CarMove : CustomMonoBehaviour
             return;
         }
 
+        speed = 5;
+
         List<Segment> possibleSegments = new List<Segment>();
         if (CurrentSegment.forwardSegment != null) possibleSegments.Add(CurrentSegment.forwardSegment);
         if (CurrentSegment.leftSegment != null) possibleSegments.Add(CurrentSegment.leftSegment);
@@ -136,17 +197,14 @@ public class CarMove : CustomMonoBehaviour
 
     IEnumerator MoveToNextSegmentStart(Segment nextSegment)
     {
-        // B1: Di chuyển tới điểm A của đoạn mới
         Transform nextPointA = nextSegment.wayPoint.GetStartPoint();
         direction = (nextPointA.position - transform.position).normalized;
         targetRotation = Quaternion.LookRotation(direction);
         targetPoint = nextPointA;
         lastDirection = direction;
 
-        // Đợi xe tới gần pointA
         yield return new WaitUntil(() => Vector3.Distance(transform.position, nextPointA.position) < 1f);
 
-        // B2: Gán đoạn mới, di chuyển từ A tới B của đoạn đó
         CurrentSegment = nextSegment;
 
         Transform pointB = CurrentSegment.wayPoint.GetEndPoint();
@@ -154,62 +212,5 @@ public class CarMove : CustomMonoBehaviour
         targetRotation = Quaternion.LookRotation(direction);
         targetPoint = pointB;
         lastDirection = direction;
-
-
     }
-
-
-    //private void OnCollisionEnter(Collision collision)
-    //{
-    //    if (collision.collider.CompareTag("TrafficLight"))
-    //    {
-    //        var light = collision.collider.GetComponent<TrafficLight>();
-    //        light.OnLightChanged += OnTrafficLightChanged;
-
-    //        if (light.currentState == LightState.Red)
-    //        {
-    //            Debug.Log("Đèn đỏ - dừng");
-    //            isWaiting = true;
-    //            direction = Vector3.zero;
-    //        }
-    //        else
-    //        {
-    //            Debug.Log("Đèn xanh - tiếp tục đi");
-    //            isWaiting = false;
-    //            direction = lastDirection;
-    //        }
-    //    }
-    //}
-
-    //private void OnTrafficLightChanged(LightState newState)
-    //{
-    //    if (newState == LightState.Green && isWaiting)
-    //    {
-    //        Debug.Log("Đèn chuyển xanh - xe tiếp tục");
-    //        direction = Vector3.forward;
-    //        isWaiting = false;
-    //    }
-    //    else if (newState == LightState.Red)
-    //    {
-    //        Debug.Log("Đèn chuyển đỏ - xe dừng");
-    //        direction = Vector3.zero;
-    //        isWaiting = true;
-    //    }
-    //}
-
-    //private void OnTriggerExit(Collider other)
-    //{
-    //    if (other.CompareTag("TrafficLight"))
-    //    {
-    //        var light = other.GetComponent<TrafficLight>();
-    //        light.OnLightChanged -= OnTrafficLightChanged;
-    //        Debug.Log("Xe đã rời khỏi vùng đèn giao thông");
-    //    }
-    //}
-    IEnumerator CoutinueMove(float time)
-    {
-        yield return new WaitForSeconds(time);
-        direction = lastDirection;
-    }
-
 }

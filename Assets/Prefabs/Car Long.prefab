@@ -446,10 +446,12 @@ MonoBehaviour:
   CurrentSegment: {fileID: 0}
   rb: {fileID: 869281623859362902}
   targetPoint: {fileID: 0}
-  detectionDistance: 3
+  detectionDistance: 2
   carLayer:
     serializedVersion: 2
     m_Bits: 64
+  priority: 0
+  speed: 3
 --- !u!54 &869281623859362902
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -496,5 +498,5 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 0.8287997, y: 0.6659999, z: 2.0974948}
-  m_Center: {x: 0.000000014901161, y: 0.513, z: -0.054930955}
+  m_Size: {x: 1.3381538, y: 1.0739665, z: 2.0974948}
+  m_Center: {x: 0.022154331, y: 0.7169833, z: -0.054930925}

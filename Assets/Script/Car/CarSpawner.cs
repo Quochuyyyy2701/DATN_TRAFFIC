@@ -42,10 +42,22 @@ public class CarSpawner : MonoBehaviour
 
     public void Spawner(Segment segment)
     {
+        Vector3 spawnPos = segment.wayPoint.GetStartPoint().position;
+        Quaternion spawnRot = segment.wayPoint.GetStartPoint().rotation;
+
+        // Giả sử kích thước collider gần đúng là 2x1x4 (Width x Height x Length)
+        Vector3 carSize = new Vector3(2f, 1f, 4f); // Điều chỉnh theo size thật của xe
+
+        if (!IsSpawnPositionClear(spawnPos, spawnRot, carSize))
+        {
+            Debug.Log("Chỗ spawn bị chiếm, bỏ qua.");
+            return;
+        }
+
         CarMove newCar = Instantiate(
             listCar[Random.Range(0, listCar.Length)],
-            segment.wayPoint.GetStartPoint().position,
-            segment.wayPoint.GetStartPoint().rotation
+            spawnPos,
+            spawnRot
         );
         newCar.CurrentSegment = segment;
         listSpawn.Add(newCar);
@@ -68,11 +80,22 @@ public class CarSpawner : MonoBehaviour
         {
             int spawnCount = Random.Range(1, maxSpawn + 1); // VD: từ 1 đến maxSpawn
 
-            for (int i = 0; i < spawnCount; i++)
+            for (int i = 0; i < maxSpawn; i++)
             {
                 Spawner(direction.segment);
                 yield return new WaitForSeconds(1f); // Đợi 1s trước khi spawn xe tiếp theo
             }
         }
     }
+    private bool IsSpawnPositionClear(Vector3 position, Quaternion rotation, Vector3 size, float checkRadius = 0.5f)
+    {
+        // Tính center của BoxCast (dịch lên để tránh check trúng mặt đất)
+        Vector3 center = position + Vector3.up * 0.5f;
+
+        // Dùng box để kiểm tra va chạm
+        Collider[] colliders = Physics.OverlapBox(center, size / 2f, rotation, LayerMask.GetMask("Car"));
+
+        return colliders.Length == 0; // Không có xe nào gần → vị trí trống
+    }
+
 }
